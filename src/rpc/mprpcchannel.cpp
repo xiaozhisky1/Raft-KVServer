@@ -18,9 +18,9 @@ void MprpcChannel::CallMethod(const google::protobuf::MethodDescriptor *method,
                               google::protobuf::RpcController *controller,
                               const google::protobuf::Message *request,
                               google::protobuf::Message *response,
-                              google::protobuf::Closure *done)
+                              google::protobuf::Closure *done)// done：表示回调函数，用于在 RPC 调用完成后执行一些操作。
 {
-    if(m_clientFd == -1){
+    if(m_clientFd == -1){// 如果当前客户端的文件描述符 m_clientFd 为 -1，表示尚未建立连接：
         std::string errMsg;
         bool rt = newConnect(m_ip.c_str(), m_port, &errMsg);
         if(!rt){
@@ -32,16 +32,16 @@ void MprpcChannel::CallMethod(const google::protobuf::MethodDescriptor *method,
         }
     }
     
-    const google::protobuf::ServiceDescriptor *sd = method->service();
+    const google::protobuf::ServiceDescriptor *sd = method->service();//.proto中的service
     std::string service_name = sd->name();    // service_name
     std::string method_name = method->name(); // method_name
 
     // 获取参数的序列化字符串长度 args_size
     uint32_t args_size = 0;
     std::string args_str;
-    if (request->SerializeToString(&args_str))
+    if (request->SerializeToString(&args_str))// 将请求消息 request 序列化为字符串存入args_str
     {
-        args_size = args_str.size();
+        args_size = args_str.size();// 并获取其长度作为 args_size。
     }
     else
     {
@@ -57,7 +57,7 @@ void MprpcChannel::CallMethod(const google::protobuf::MethodDescriptor *method,
 
     uint32_t header_size = 0;
     std::string rpc_header_str;
-    if (rpcHeader.SerializeToString(&rpc_header_str))
+    if (rpcHeader.SerializeToString(&rpc_header_str))// 将header序列化
     {
         header_size = rpc_header_str.size();
     }

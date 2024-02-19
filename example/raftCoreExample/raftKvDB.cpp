@@ -23,7 +23,7 @@ int main(int argc, char **argv) {
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<> dis(10000, 29999);
-    unsigned short startPort = dis(gen);
+    unsigned short startPort = dis(gen);// 存储生成的随机端口号
     while ((c = getopt(argc, argv, "n:f:")) != -1) { // 根据输入的参数初始化raft集群配置
         switch (c) {
             case 'n': // 获取节点数
@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
         std::cout << "无法打开 " << configFileName << std::endl;
         exit(EXIT_FAILURE);
     }
-    for (int i = 0; i < nodeNum; i++) {
+    for (int i = 0; i < nodeNum; i++) {// 每一个子进程就是一个raft节点
         short port = startPort + static_cast<short>(i);
         std::cout << "start to create raftkv node:" << i << "    port:" << port << " pid:" << getpid() << std::endl;
         pid_t pid = fork(); // 创建新进程

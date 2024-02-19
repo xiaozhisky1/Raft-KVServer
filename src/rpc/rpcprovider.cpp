@@ -34,11 +34,12 @@ void RpcProvider::NotifyService(google::protobuf::Service *service)
         // 获取了服务对象指定下标的服务方法的描述（抽象描述） UserService   Login
         const google::protobuf::MethodDescriptor *pmethodDesc = pserviceDesc->method(i);
         std::string method_name = pmethodDesc->name();
-        service_info.m_methodMap.insert({method_name, pmethodDesc});
+        service_info.m_methodMap.insert({method_name, pmethodDesc});// 将服务中的函数存入m_methodMap
 
     }
     service_info.m_service = service;
     m_serviceMap.insert({service_name, service_info});
+    // 可以根据服务对象名找到服务信息service_info，在从中m_methodMap找到对应的函数
 }
 
 // 启动rpc服务节点，开始提供rpc远程网络调用服务
@@ -78,8 +79,8 @@ void RpcProvider::Run(int nodeIndex,short port)
     outfile.close();
 
     //创建服务器
-    muduo::net::InetAddress address(ip, port);
 
+    muduo::net::InetAddress address(ip, port);
     // 创建TcpServer对象
     m_muduo_server =  std::make_shared<muduo::net::TcpServer>(&m_eventLoop, address, "RpcProvider");
 
@@ -201,12 +202,12 @@ void RpcProvider::OnMessage(const muduo::net::TcpConnectionPtr &conn,
         return;
     }
 
-    google::protobuf::Service *service = it->second.m_service;      // 获取service对象  new UserService
+    google::protobuf::Service *service = it->second.m_service;      // 获取service对象  总共两种service，分别是kvserverRPC和raftRPC
     const google::protobuf::MethodDescriptor *method = mit->second; // 获取method对象  Login
 
     // 生成rpc方法调用的请求request和响应response参数,由于是rpc的请求，因此请求需要通过request来序列化
-    google::protobuf::Message *request = service->GetRequestPrototype(method).New();
-    if (!request->ParseFromString(args_str))
+    google::protobuf::Message *request = service->GetRequestPrototype(method).New();// 得到一个新的request，同样是PutAppendArgs类型的message
+    if (!request->ParseFromString(args_str))// 将从字符串 args_str 中解析的数据填充到请求消息对象中。
     {
         std::cout << "request parse error, content:" << args_str << std::endl;
         return;
@@ -217,7 +218,7 @@ void RpcProvider::OnMessage(const muduo::net::TcpConnectionPtr &conn,
     // closure是执行完本地方法之后会发生的回调，因此需要完成序列化和反向发送请求的操作
     google::protobuf::Closure *done = google::protobuf::NewCallback<RpcProvider,
                                                                     const muduo::net::TcpConnectionPtr &,
-                                                                    google::protobuf::Message *>(this,
+                                                                    google::protobuf::Message *>(this,//SendRpcResponse()用于序列化rpc的响应和网络发送,发送响应回去
                                                                                                  &RpcProvider::SendRpcResponse,
                                                                                                  conn, response);
 

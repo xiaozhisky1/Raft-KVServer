@@ -24,7 +24,7 @@
 #include <boost/serialization/unordered_map.hpp>
 
 
-class KvServer : raftKVRpcProctoc::kvServerRpc {
+class KvServer : raftKVRpcProctoc::kvServerRpc {// 继承自 raftKVRpcProctoc::kvServerRpc
 private:
     std::mutex m_mtx;
     int m_me;

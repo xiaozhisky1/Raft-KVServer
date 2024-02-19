@@ -122,7 +122,7 @@ void KvServer::Get(const raftKVRpcProctoc::GetArgs *args, raftKVRpcProctoc::GetR
             // 不会违反线性一致性
             std::string value;
             bool exist = false;
-            ExecuteGetOpOnKVDB(op, &value, &exist);
+            ExecuteGetOpOnKVDB(op, &value, &exist);// 真正执行Get操作
             if (exist) {
                 reply->set_err(OK);
                 reply->set_value(value);
@@ -140,7 +140,7 @@ void KvServer::Get(const raftKVRpcProctoc::GetArgs *args, raftKVRpcProctoc::GetR
         if (raftCommitOp.ClientId == op.ClientId && raftCommitOp.RequestId == op.RequestId) {
             std::string value;
             bool exist = false;
-            ExecuteGetOpOnKVDB(op, &value, &exist);
+            ExecuteGetOpOnKVDB(op, &value, &exist); // 真正执行Get操作
             if (exist) {
                 reply->set_err(OK);
                 reply->set_value(value);
@@ -204,8 +204,8 @@ bool KvServer::ifRequestDuplicate(std::string ClientId, int RequestId) {
 }
 
 //get和put//append執行的具體細節是不一樣的
-//PutAppend在收到raft消息之後執行，具體函數裏面只判斷冪等性（是否重複）
-//get函數收到raft消息之後在，因爲get無論是否重複都可以再執行
+//PutAppend 在收到 Raft 消息之后执行，具体函数内部只判断幂等性（即是否重复）。
+//而 get 函数在收到 Raft 消息之后执行，因为 get 无论是否重复都可以再次执行。
 void KvServer::PutAppend(const raftKVRpcProctoc::PutAppendArgs *args, raftKVRpcProctoc::PutAppendReply *reply) {
     Op op;
     op.Operation = args->op();
@@ -217,7 +217,7 @@ void KvServer::PutAppend(const raftKVRpcProctoc::PutAppendArgs *args, raftKVRpcP
     int _ = -1;
     bool isleader = false;
 
-    m_raftNode->Start(op, &raftIndex, &_, &isleader);
+    m_raftNode->Start(op, &raftIndex, &_, &isleader);// 给raft节点发送日志
 
 
     if (!isleader) {
@@ -225,17 +225,17 @@ void KvServer::PutAppend(const raftKVRpcProctoc::PutAppendArgs *args, raftKVRpcP
             "[func -KvServer::PutAppend -kvserver{%d}]From Client %s (Request %d) To Server %d, key %s, raftIndex %d , but not leader",
             m_me, &args->clientid(), args->requestid(), m_me, &op.Key, raftIndex);
 
-        reply->set_err(ErrWrongLeader);
+        reply->set_err(ErrWrongLeader);// 将错误信息发回给clerk，其得知后会跟换raft节点
         return;
     }
     DPrintf(
         "[func -KvServer::PutAppend -kvserver{%d}]From Client %s (Request %d) To Server %d, key %s, raftIndex %d , is leader ",
         m_me, &args->clientid(), args->requestid(), m_me, &op.Key, raftIndex);
     m_mtx.lock();
-    if (waitApplyCh.find(raftIndex) == waitApplyCh.end()) {
-        waitApplyCh.insert(std::make_pair(raftIndex, new LockQueue<Op>()));
+    if (waitApplyCh.find(raftIndex) == waitApplyCh.end()) {//如果队列中不存在与 raftIndex 对应的通道
+        waitApplyCh.insert(std::make_pair(raftIndex, new LockQueue<Op>()));//创建一个新的通道并插入到 waitApplyCh 中
     }
-    auto chForRaftIndex = waitApplyCh[raftIndex];
+    auto chForRaftIndex = waitApplyCh[raftIndex];// 获取与 raftIndex 对应的通道。
 
 
     m_mtx.unlock(); //直接解锁，等待任务执行完成，不能一直拿锁等待
@@ -243,17 +243,17 @@ void KvServer::PutAppend(const raftKVRpcProctoc::PutAppendArgs *args, raftKVRpcP
     // timeout
     Op raftCommitOp;
 
-    if (!chForRaftIndex->timeOutPop(CONSENSUS_TIMEOUT, &raftCommitOp)) {
+    if (!chForRaftIndex->timeOutPop(CONSENSUS_TIMEOUT, &raftCommitOp)) {//通过超时pop来限定命令执行时间，如果超过时间还没拿到消息说明命令执行超时了。
         DPrintf(
             "[func -KvServer::PutAppend -kvserver{%d}]TIMEOUT PUTAPPEND !!!! Server %d , get Command <-- Index:%d , ClientId %s, RequestId %s, Opreation %s Key :%s, Value :%s"
             , m_me, m_me, raftIndex, &op.ClientId, op.RequestId, &op.Operation, &op.Key, &op.Value);
 
         if (ifRequestDuplicate(op.ClientId, op.RequestId)) {
             reply->set_err(OK); // 超时了,但因为是重复的请求，返回ok，实际上就算没有超时，在真正执行的时候也要判断是否重复
-        } else {
+        } else {// 超时了，且不是重复的请求
             reply->set_err(ErrWrongLeader); ///这里返回这个的目的让clerk重新尝试
         }
-    } else {
+    } else {//没超时，命令可能真正的在raft集群执行成功了。
         DPrintf(
             "[func -KvServer::PutAppend -kvserver{%d}]WaitChanGetRaftApplyMessage<--Server %d , get Command <-- Index:%d , ClientId %s, RequestId %d, Opreation %s, Key :%s, Value :%s"
             , m_me, m_me, raftIndex, &op.ClientId, op.RequestId, &op.Operation, &op.Key, &op.Value);
@@ -268,16 +268,16 @@ void KvServer::PutAppend(const raftKVRpcProctoc::PutAppendArgs *args, raftKVRpcP
 
     m_mtx.lock();
 
-    auto tmp = waitApplyCh[raftIndex];
-    waitApplyCh.erase(raftIndex);
-    delete tmp;
+    auto tmp = waitApplyCh[raftIndex];//创建一个指向 waitApplyCh[raftIndex] 的临时指针 tmp
+    waitApplyCh.erase(raftIndex);// 从 waitApplyCh 中删除与 raftIndex 对应的通道。
+    delete tmp;// 删除之前创建的通道。
     m_mtx.unlock();
 }
 
 void KvServer::ReadRaftApplyCommandLoop() {
     while (true) {
         //如果只操作applyChan不用拿锁，因为applyChan自己带锁
-        auto message = applyChan->Pop(); //阻塞弹出
+        auto message = applyChan->Pop(); //阻塞弹出，返回弹出的message（当applyChan为空时就阻塞住）
         DPrintf("---------------tmp-------------[func-KvServer::ReadRaftApplyCommandLoop()-kvserver{%d}] 收到了下raft的消息",
                 m_me);
         // listen to every command applied by its raft ,delivery to relative RPC Handler
@@ -369,20 +369,21 @@ void KvServer::Get(google::protobuf::RpcController *controller, const ::raftKVRp
 
 KvServer::KvServer(int me, int maxraftstate, std::string nodeInforFileName, short port):
 m_skipList(6){
-    std::shared_ptr<Persister> persister = std::make_shared<Persister>(me); // 这是一个指针
+    std::shared_ptr<Persister> persister = std::make_shared<Persister>(me); //创建一个共享指针 persister，用于管理持久化数据。
 
     m_me = me;
     m_maxRaftState = maxraftstate;
 
-    applyChan = std::make_shared<LockQueue<ApplyMsg> >();
+    applyChan = std::make_shared<LockQueue<ApplyMsg> >();//共享队列：kvServer和raft节点的通信管道
 
-    m_raftNode = std::make_shared<Raft>();
+    m_raftNode = std::make_shared<Raft>();//创建一个 Raft 节点对象 m_raftNode
     ////////////////clerk层面 kvserver开启rpc接受功能
     //    同时raft与raft节点之间也要开启rpc功能，因此有两个注册
     std::thread t([this, port]()-> void {
         // provider是一个rpc网络服务对象。把UserService对象发布到rpc节点上
         RpcProvider provider;
-        provider.NotifyService(this);
+        // 由于KvServer继承自 raftKVRpcProctoc::kvServerRpc，因此可以直接读取到该对象的描述信息
+        provider.NotifyService(this);// 将当前 KvServer 对象和 m_raftNode 对象注册到 RPC 服务中。
         provider.NotifyService(this->m_raftNode.get()); //todo：这里获取了原始指针，后面检查一下有没有泄露的问题 或者 shareptr释放的问题
         // 启动一个rpc服务发布节点   Run以后，进程进入阻塞状态，等待远程的rpc调用请求
         provider.Run(m_me, port);
@@ -394,7 +395,7 @@ m_skipList(6){
     std::cout << "raftServer node:" << m_me << " start to sleep to wait all ohter raftnode start!!!!" << std::endl;
     sleep(6);
     std::cout << "raftServer node:" << m_me << " wake up!!!! start to connect other raftnode" << std::endl;
-    //获取所有raft节点ip、port ，并进行连接  ,要排除自己
+    //获取所有raft节点ip、port ，并进行连接  ,要排除自己, 这一段和Clerk.init()基本一致
     MprpcConfig config;
     config.LoadConfigFile(nodeInforFileName.c_str());
     std::vector<std::pair<std::string, short> > ipPortVt;
@@ -417,13 +418,13 @@ m_skipList(6){
         }
         std::string otherNodeIp = ipPortVt[i].first;
         short otherNodePort = ipPortVt[i].second;
-        auto *rpc = new RaftRpcUtil(otherNodeIp, otherNodePort);
+        auto *rpc = new RaftRpcUtil(otherNodeIp, otherNodePort);// 为每个节点创建一个 raftServerRpcUtil 对象,raftServerRpcUtil 是一个用于与 Raft 节点通信的工具类
         servers.push_back(std::shared_ptr<RaftRpcUtil>(rpc));
 
         std::cout << "node" << m_me << " 连接node" << i << "success!" << std::endl;
     }
     sleep(ipPortVt.size() - me); //等待所有节点相互连接成功，再启动raft
-    m_raftNode->init(servers, m_me, persister, applyChan);
+    m_raftNode->init(servers, m_me, persister, applyChan);// 将Raft节点初始化
     //kv的server直接与raft通信，但kv不直接与raft通信，所以需要把ApplyMsg的chan传递下去用于通信，两者的persist也是共用的
 
     //////////////////////////////////
@@ -438,6 +439,6 @@ m_skipList(6){
     if (!snapshot.empty()) {
         ReadSnapShotToInstall(snapshot);
     }
-    std::thread t2(&KvServer::ReadRaftApplyCommandLoop, this); //马上向其他节点宣告自己就是leader
+    std::thread t2(&KvServer::ReadRaftApplyCommandLoop, this); //线程不断读取applyChan中的message，有message就立刻执行对应的操作
     t2.join(); //由於ReadRaftApplyCommandLoop一直不會結束，相當於一直卡死在這裏了
 }

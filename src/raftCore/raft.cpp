@@ -151,7 +151,7 @@ void Raft::applierTicker() {
             DPrintf("[Raft::applierTicker() - raft{%d}]  m_lastApplied{%d}   m_commitIndex{%d}", m_me, m_lastApplied,
                     m_commitIndex);
         }
-        auto applyMsgs = getApplyLogs();
+        auto applyMsgs = getApplyLogs();// 获取待应用的日志消息
         m_mtx.unlock();
         //使用匿名函数是因为传递管道的时候不用拿锁   todo:好像必须拿锁，因为不拿锁的话如果调用多次applyLog函数，可能会导致应用的顺序不一样
         if (!applyMsgs.empty()) {
@@ -159,7 +159,7 @@ void Raft::applierTicker() {
                     applyMsgs.size());
         }
         for (auto &message: applyMsgs) {
-            applyChan->Push(message);
+            applyChan->Push(message);// 遍历 applyMsgs 中的每个消息，并将其推送到 applyChan 管道中。
         }
         sleepNMilliseconds(ApplyInterval);
     }
@@ -320,20 +320,20 @@ void Raft::electionTimeOutTicker() {
 }
 
 std::vector<ApplyMsg> Raft::getApplyLogs() {
-    std::vector<ApplyMsg> applyMsgs;
-    myAssert(m_commitIndex <= getLastLogIndex(),
+    std::vector<ApplyMsg> applyMsgs;// 用于存储待应用的日志消息
+    myAssert(m_commitIndex <= getLastLogIndex(),// 检查 m_commitIndex 是否小于等于最后一个日志索引,若不满足就发生错误
              format("[func-getApplyLogs-rf{%d}] commitIndex{%d} >getLastLogIndex{%d}", m_me, m_commitIndex,
                     getLastLogIndex()));
 
-    while (m_lastApplied < m_commitIndex) {
+    while (m_lastApplied < m_commitIndex) {// 将所有未应用到KV_DB的日志消息都加入到applyMsgs
         m_lastApplied++;
         myAssert(m_logs[getSlicesIndexFromLogIndex(m_lastApplied)].logindex() == m_lastApplied,
                  format("rf.logs[rf.getSlicesIndexFromLogIndex(rf.lastApplied)].LogIndex{%d} != rf.lastApplied{%d} ",
-                        m_logs[getSlicesIndexFromLogIndex(m_lastApplied)].logindex(), m_lastApplied));
+                        m_logs[getSlicesIndexFromLogIndex(m_lastApplied)].logindex(), m_lastApplied));// 检查当前日志项的索引是否与 m_lastApplied 相等。如果不相等，会触发断言错误。
         ApplyMsg applyMsg;
         applyMsg.CommandValid = true;
         applyMsg.SnapshotValid = false;
-        applyMsg.Command = m_logs[getSlicesIndexFromLogIndex(m_lastApplied)].command();
+        applyMsg.Command = m_logs[getSlicesIndexFromLogIndex(m_lastApplied)].command();// 从日志中获取命令，并将其赋值给 applyMsg.Command
         applyMsg.CommandIndex = m_lastApplied;
         applyMsgs.emplace_back(applyMsg);
         //        DPrintf("[	applyLog func-rf{%v}	] apply Log,logIndex:%v  ，logTerm：{%v},command：{%v}\n", rf.me, rf.lastApplied, rf.logs[rf.getSlicesIndexFromLogIndex(rf.lastApplied)].LogTerm, rf.logs[rf.getSlicesIndexFromLogIndex(rf.lastApplied)].Command)
@@ -880,7 +880,7 @@ void Raft::Start(Op command, int *newLogIndex, int *newLogTerm, bool *isLeader) 
     newLogEntry.set_command(command.asString());
     newLogEntry.set_logterm(m_currentTerm);
     newLogEntry.set_logindex(getNewCommandIndex());
-    m_logs.emplace_back(newLogEntry);
+    m_logs.emplace_back(newLogEntry);//加入日志
 
 
     int lastLogIndex = getLastLogIndex();
@@ -888,7 +888,7 @@ void Raft::Start(Op command, int *newLogIndex, int *newLogTerm, bool *isLeader) 
     //leader应该不停的向各个Follower发送AE来维护心跳和保持日志同步，目前的做法是新的命令来了不会直接执行，而是等待leader的心跳触发
     DPrintf("[func-Start-rf{%d}]  lastLogIndex:%d,command:%s\n", m_me, lastLogIndex, &command);
     //rf.timer.Reset(10) //接收到命令后马上给follower发送,改成这样不知为何会出现问题，待修正 todo
-    persist();
+    persist();// 持久化
     *newLogIndex = newLogEntry.logindex();
     *newLogTerm = newLogEntry.logterm();
     *isLeader = true;
@@ -954,21 +954,22 @@ void Raft::init(std::vector<std::shared_ptr<RaftRpcUtil> > peers, int me, std::s
     std::thread t3(&Raft::applierTicker, this);
     t3.detach();
 }
-
+// 将 Raft 节点的状态信息和日志项序列化为字符串
 std::string Raft::persistData() {
-    BoostPersistRaftNode boostPersistRaftNode;
+    BoostPersistRaftNode boostPersistRaftNode;//创建了一个名为 BoostPersistRaftNode 的对象。
+    //然后，将当前 Raft 节点的一些状态信息赋值给 BoostPersistRaftNode 对象的成员变量
     boostPersistRaftNode.m_currentTerm = m_currentTerm;
     boostPersistRaftNode.m_votedFor = m_votedFor;
     boostPersistRaftNode.m_lastSnapshotIncludeIndex = m_lastSnapshotIncludeIndex;
     boostPersistRaftNode.m_lastSnapshotIncludeTerm = m_lastSnapshotIncludeTerm;
-    for (auto &item: m_logs) {
+    for (auto &item: m_logs) {// 将 Raft 节点的日志项序列化为字符串，并添加到 boostPersistRaftNode.m_logs 中。
         boostPersistRaftNode.m_logs.push_back(item.SerializeAsString());
     }
 
-    std::stringstream ss;
-    boost::archive::text_oarchive oa(ss);
-    oa << boostPersistRaftNode;
-    return ss.str();
+    std::stringstream ss; // 用于存储序列化后的数据
+    boost::archive::text_oarchive oa(ss); // 使用 Boost 库中的 boost::archive::text_oarchive 对象 oa
+    oa << boostPersistRaftNode;// 将 boostPersistRaftNode 对象序列化到 ss 中
+    return ss.str();// 将 ss 中的数据转换为字符串并返回
 }
 
 void Raft::readPersist(std::string data) {

@@ -32,10 +32,9 @@ std::string Persister::ReadSnapshot() {
     ifs.close();
     return snapshot;
 }
-
+// 将raftstate和snapshot写入本地文件
 void Persister::SaveRaftState(const std::string &data) {
     std::lock_guard<std::mutex> lg(mtx);
-    // 将raftstate和snapshot写入本地文件
     m_raftStateOutStream << data;
 }
 
