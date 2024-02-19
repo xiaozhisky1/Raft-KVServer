@@ -34,7 +34,7 @@ class Raft : public raftRpcProctoc::raftRpc
 
 private:
     std::mutex m_mtx;
-    std::vector<std::shared_ptr< RaftRpcUtil >> m_peers;
+    std::vector<std::shared_ptr< RaftRpcUtil >> m_peers;    
     std::shared_ptr<Persister> m_persister;
     int m_me;
     int m_currentTerm;
@@ -71,14 +71,14 @@ private:
     int m_lastSnapshotIncludeTerm;
 
 public:
-    void AppendEntries1(const raftRpcProctoc::AppendEntriesArgs *args, raftRpcProctoc::AppendEntriesReply *reply);
-    void applierTicker();
-    bool CondInstallSnapshot(int lastIncludedTerm, int lastIncludedIndex, std::string snapshot);
-    void doElection();
-    void doHeartBeat();
+    void AppendEntries1(const raftRpcProctoc::AppendEntriesArgs *args, raftRpcProctoc::AppendEntriesReply *reply);//日志同步 + 心跳 rpc ，重点关注
+    void applierTicker();//定期向状态机写入日志，非重点函数
+    bool CondInstallSnapshot(int lastIncludedTerm, int lastIncludedIndex, std::string snapshot);//快照相关，非重点
+    void doElection();//发起选举
+    void doHeartBeat();//leader定时发起心跳
     // 每隔一段时间检查睡眠时间内有没有重置定时器，没有则说明超时了
 // 如果有则设置合适睡眠时间：睡眠到重置时间+超时时间
-    void electionTimeOutTicker();
+    void electionTimeOutTicker();//监控是否该发起选举了
     std::vector<ApplyMsg> getApplyLogs();
     int getNewCommandIndex();
     void getPrevLogInfo(int server, int *preIndex, int *preTerm);
@@ -108,7 +108,7 @@ public:
     std::string persistData();
 
 
-    void Start(Op command,int* newLogIndex,int* newLogTerm,bool* isLeader ) ;
+    void Start(Op command,int* newLogIndex,int* newLogTerm,bool* isLeader ) ; // 发布发来一个新日志
 
 // Snapshot the service says it has created a snapshot that has
 // all info up to and including index. this means the

@@ -369,7 +369,7 @@ void KvServer::Get(google::protobuf::RpcController *controller, const ::raftKVRp
 
 KvServer::KvServer(int me, int maxraftstate, std::string nodeInforFileName, short port):
 m_skipList(6){
-    std::shared_ptr<Persister> persister = std::make_shared<Persister>(me);
+    std::shared_ptr<Persister> persister = std::make_shared<Persister>(me); // 这是一个指针
 
     m_me = me;
     m_maxRaftState = maxraftstate;

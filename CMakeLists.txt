@@ -26,7 +26,7 @@ include_directories(${PROJECT_SOURCE_DIR}/src/skipList/include)
 link_directories(${PROJECT_SOURCE_DIR}/lib)
 
 # src包含了所有的相关代码
-add_subdirectory(src)
+add_subdirectory(src) #在src下寻找CMake文件
 # example包含了使用的示例代码
 add_subdirectory(example)
 

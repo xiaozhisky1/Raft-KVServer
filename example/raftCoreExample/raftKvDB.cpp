@@ -24,12 +24,12 @@ int main(int argc, char **argv) {
     std::mt19937 gen(rd());
     std::uniform_int_distribution<> dis(10000, 29999);
     unsigned short startPort = dis(gen);
-    while ((c = getopt(argc, argv, "n:f:")) != -1) {
+    while ((c = getopt(argc, argv, "n:f:")) != -1) { // 根据输入的参数初始化raft集群配置
         switch (c) {
-            case 'n':
+            case 'n': // 获取节点数
                 nodeNum = atoi(optarg);
                 break;
-            case 'f':
+            case 'f': // 获取配置文件名
                 configFileName = optarg;
                 break;
             default:
@@ -37,9 +37,9 @@ int main(int argc, char **argv) {
                 exit(EXIT_FAILURE);
         }
     }
-    std::ofstream file(configFileName, std::ios::out | std::ios::app);
+    std::ofstream file(configFileName, std::ios::out | std::ios::app); // 创建文件并打开
     file.close();
-    file = std::ofstream(configFileName, std::ios::out | std::ios::trunc);
+    file = std::ofstream(configFileName, std::ios::out | std::ios::trunc); // 再次打开文件，将其长度设为0
     if (file.is_open()) {
         file.close();
         std::cout << configFileName << " 已清空" << std::endl;

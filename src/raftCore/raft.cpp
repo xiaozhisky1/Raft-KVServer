@@ -190,7 +190,7 @@ bool Raft::CondInstallSnapshot(int lastIncludedTerm, int lastIncludedIndex, std:
 }
 
 void Raft::doElection() {
-    std::lock_guard<std::mutex> g(m_mtx);
+    std::lock_guard<std::mutex> g(m_mtx); //c11新特性，使用raii避免死锁 
 
     if (m_status == Leader) {
         //fmt.Printf("[       ticker-func-rf(%v)              ] is a Leader,wait the  lock\n", rf.me)
@@ -216,7 +216,7 @@ void Raft::doElection() {
             }
             int lastLogIndex = -1, lastLogTerm = -1;
             getLastLogIndexAndTerm(&lastLogIndex, &lastLogTerm); //获取最后一个log的term和下标
-
+            //初始化发送参数
             std::shared_ptr<raftRpcProctoc::RequestVoteArgs> requestVoteArgs = std::make_shared<
                 raftRpcProctoc::RequestVoteArgs>();
             requestVoteArgs->set_term(m_currentTerm);
@@ -682,11 +682,11 @@ bool Raft::sendRequestVote(int server, std::shared_ptr<raftRpcProctoc::RequestVo
     //todo
     auto start = now();
     DPrintf("[func-sendRequestVote rf{%d}] 向server{%d} 發送 RequestVote 開始", m_me, m_currentTerm, getLastLogIndex());
-    bool ok = m_peers[server]->RequestVote(args.get(), reply.get());
+    bool ok = m_peers[server]->RequestVote(args.get(), reply.get());// 使用RPC调用RequestVote
     DPrintf("[func-sendRequestVote rf{%d}] 向server{%d} 發送 RequestVote 完畢，耗時:{%d} ms", m_me, m_currentTerm,
             getLastLogIndex(), now() - start);
 
-    if (!ok) {
+    if (!ok) {//rpc通信失败就立即返回，避免资源消耗
         return ok; //不知道为什么不加这个的话如果服务器宕机会出现问题的，通不过2B  todo
     }
     //for !ok {
@@ -701,26 +701,26 @@ bool Raft::sendRequestVote(int server, std::shared_ptr<raftRpcProctoc::RequestVo
     if (reply->term() > m_currentTerm) {
         m_status = Follower; //三变：身份，term，和投票
         m_currentTerm = reply->term();
-        m_votedFor = -1;
+        m_votedFor = -1;//term更新了，那么这个term自己肯定没投过票，为-1
         persist();
         return true;
-    } else if (reply->term() < m_currentTerm) {
+    } else if (reply->term() < m_currentTerm) {//回复的term比自己的term小，不应该出现这种情况
         return true;
     }
     myAssert(reply->term() == m_currentTerm,
              format("assert {reply.Term==rf.currentTerm} fail"));
 
     //todo：这里没有按博客写
-    if (!reply->votegranted()) {
+    if (!reply->votegranted()) { //这个节点因为某些原因没给自己投票，没啥好说的，结束本函数
         return true;
     }
-
+      //给自己投票了
     *votedNum = *votedNum + 1;
     if (*votedNum >= m_peers.size() / 2 + 1) {
         //变成leader
-        *votedNum = 0;
+        *votedNum = 0;  //重置voteDNum，如果不重置，那么就会变成leader很多次，是没有必要的，甚至是错误的！！！
         if (m_status == Leader) {
-            //如果已经是leader了，那么是就是了，不会进行下一步处理了k
+            //如果已经是leader了，说明同一个term当两次领导，出现错误，终止进程
             myAssert(false,
                      format("[func-sendRequestVote-rf{%d}]  term:{%d} 同一个term当两次领导，error", m_me, m_currentTerm));
         }
@@ -906,17 +906,17 @@ void Raft::Start(Op command, int *newLogIndex, int *newLogTerm, bool *isLeader) 
 // for any long-running work.
 void Raft::init(std::vector<std::shared_ptr<RaftRpcUtil> > peers, int me, std::shared_ptr<Persister> persister,
                 std::shared_ptr<LockQueue<ApplyMsg> > applyCh) {
-    m_peers = peers;
-    m_persister = persister;
-    m_me = me;
+    m_peers = peers;//与其他结点沟通的rpc类
+    m_persister = persister;//持久化类
+    m_me = me;//标记自己，毕竟不能给自己发送rpc吧
     // Your initialization code here (2A, 2B, 2C).
     m_mtx.lock();
 
     //applier
-    this->applyChan = applyCh;
+    this->applyChan = applyCh; //与kv-server沟通
     //    rf.ApplyMsgQueue = make(chan ApplyMsg)
-    m_currentTerm = 0;
-    m_status = Follower;
+    m_currentTerm = 0;  //初始化term为0
+    m_status = Follower; //初始化身份为follower
     m_commitIndex = 0;
     m_lastApplied = 0;
     m_logs.clear();
@@ -924,11 +924,11 @@ void Raft::init(std::vector<std::shared_ptr<RaftRpcUtil> > peers, int me, std::s
         m_matchIndex.push_back(0);
         m_nextIndex.push_back(0);
     }
-    m_votedFor = -1;
+    m_votedFor = -1;//当前term没有给其他人投过票就用-1表示
 
     m_lastSnapshotIncludeIndex = 0;
     m_lastSnapshotIncludeTerm = 0;
-    m_lastResetElectionTime = now();
+    m_lastResetElectionTime = now();    
     m_lastResetHearBeatTime = now();
 
 
@@ -944,7 +944,7 @@ void Raft::init(std::vector<std::shared_ptr<RaftRpcUtil> > peers, int me, std::s
             m_currentTerm, m_lastSnapshotIncludeIndex, m_lastSnapshotIncludeTerm);
 
     m_mtx.unlock();
-    // start ticker goroutine to start elections
+     // start ticker  开始三个定时器
     std::thread t(&Raft::leaderHearBeatTicker, this);
     t.detach();
 
