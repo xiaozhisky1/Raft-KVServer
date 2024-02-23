@@ -10,11 +10,15 @@ int main(){
     auto start = now();
     int count = 500;
     int tmp = count;
-    while (tmp --){
-        client.Put("x",std::to_string(tmp));
+    // while (tmp --){
+    //     client.Put("x",std::to_string(tmp));
 
-        std::string get1 = client.Get("x");
-        std::printf("get return :{%s}\r\n",get1.c_str());
-    }
+    //     std::string get1 = client.Get("x");
+    //     std::printf("get return :{%s}\r\n",get1.c_str());
+    // }
+
+    string get;
+    get = client.Get("");
+    savefile("./output3.png",get);
     return 0;
 }

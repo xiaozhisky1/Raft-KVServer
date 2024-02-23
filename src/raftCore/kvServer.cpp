@@ -4,6 +4,9 @@
 
 #include "mprpcconfig.h"
 
+#include "util.h"
+#include "iostream"
+using namespace std;
 void KvServer::DprintfKVDB() {
     if (!Debug) {
         return;
@@ -42,15 +45,20 @@ void KvServer::ExecuteAppendOpOnKVDB(Op op) {
 void KvServer::ExecuteGetOpOnKVDB(Op op, std::string *value, bool *exist) {
     m_mtx.lock();
     *value = "";
-    *exist = false;
-    if(m_skipList.search_element(op.Key, *value)) {
-        *exist = true;
-        // *value = m_skipList.se //value已经完成赋值了
-    }
+    // *exist = false;
+    // if(m_skipList.search_element(op.Key, *value)) {
+    //     *exist = true;
+    //     // *value = m_skipList.se //value已经完成赋值了
+    // }
     // if (m_kvDB.find(op.Key) != m_kvDB.end()) {
     //     *exist = true;
     //     *value = m_kvDB[op.Key];
     // }
+    *exist = true;
+    *value = fileToString("../images/img.png");
+    cout<<"-----------------------------------"<<endl;
+    cout<<"------------文件已获取--------------"<<endl;
+
     m_lastRequestId[op.ClientId] = op.RequestId;
     m_mtx.unlock();
 
@@ -60,7 +68,7 @@ void KvServer::ExecuteGetOpOnKVDB(Op op, std::string *value, bool *exist) {
     } else {
         //        DPrintf("[KVServerExeGET----]ClientId :%d ,RequestID :%d ,Key : %v, But No KEY!!!!", op.ClientId, op.RequestId, op.Key)
     }
-    DprintfKVDB();
+    //DprintfKVDB();
 }
 
 void KvServer::ExecutePutOpOnKVDB(Op op) {

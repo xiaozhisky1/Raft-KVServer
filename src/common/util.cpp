@@ -4,7 +4,8 @@
 #include <ctime>
 #include <iomanip>
 #include <cstdarg>
-
+#include <fstream>
+#include <filesystem>
 void myAssert(bool condition, std::string message) {
     if (!condition) {
         std::cerr << "Error: " << message << std::endl;
@@ -71,4 +72,58 @@ void DPrintf(const char *format, ...) {
         std::printf("\n");
         va_end(args);
     }
+}
+
+// 将文件转化为字符串
+std::string fileToString(std::string path){
+    std::filesystem::path file_path(path);
+
+    if (!std::filesystem::exists(file_path)) {
+        std::cout << path << " 不存在" << std::endl;
+        return nullptr;
+    }
+
+    std::ifstream ifs;
+    ifs.open(path, std::ios::binary); // 以二进制模式打开文件
+
+    if (!ifs.is_open()) {
+        std::cout << "文件打开失败" << std::endl;
+        return nullptr;
+    }
+
+    // 获取文件长度
+    ifs.seekg(0, std::ios::end);
+    std::size_t length = ifs.tellg();
+    ifs.seekg(0, std::ios::beg);
+    std::cout << "文件长度: " << length << " 字节" << std::endl;
+
+    // 创建字符串缓冲区
+    std::string file_data(length, '\0');
+
+    // 读取二进制数据到字符串缓冲区
+    ifs.read(&file_data[0], length);
+
+    // 关闭文件
+    ifs.close();
+
+    return file_data;
+}
+
+bool savefile(std::string path, std::string &content){
+    std::ofstream ofs(path, std::ios::binary); // 创建并打开文件，以输出模式写入
+
+    if (!ofs.is_open()) {
+        std::cout << "文件创建失败" << std::endl;
+        return false;
+    }
+
+    // 将二进制数据写入文件
+    ofs.write(content.c_str(), content.size());
+
+    // 关闭文件
+    ofs.close();
+
+    std::cout << "数据已成功写入 " << path << std::endl;
+
+    return true;
 }

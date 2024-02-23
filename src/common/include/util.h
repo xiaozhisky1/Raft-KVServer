@@ -194,6 +194,10 @@ bool isReleasePort(unsigned short usPort);
 
 bool getReleasePort(short& port);
 
+std::string fileToString(std::string path);
+
+bool savefile(std::string path, std::string &content);
+
 //int main(int argc, char** argv)
 //{
 //    short port = 9060;
