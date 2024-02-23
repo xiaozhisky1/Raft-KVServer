@@ -32,10 +32,13 @@ class Clerk{
 public:
     //对外暴露的三个功能和初始化
     void Init(std::string configFileName);
-    std::string Get(std::string key ) ;
+    std::string Get(std::string key ,std::string op, std::string& value);
 
     void Put(std::string key , std::string value );
-    void Append(std::string key , std::string value );
+    void Upload(std::string key , std::string value );
+    std::string Download(std::string key, std::string& value);
+    std::string Delete(std::string key, std::string& value);
+    std::string Ls(std::string key, std::string& value);
 public:
     Clerk();
 };

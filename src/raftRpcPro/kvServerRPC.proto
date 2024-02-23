@@ -10,6 +10,7 @@ message GetArgs{
   bytes Key = 1 ;
   bytes ClientId = 2 ;
   int32 RequestId = 3;
+  bytes Op = 4;
 }
 
 

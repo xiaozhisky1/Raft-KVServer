@@ -101,6 +101,7 @@ const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_kvServerRPC_2eproto::offsets[]
   PROTOBUF_FIELD_OFFSET(::raftKVRpcProctoc::GetArgs, key_),
   PROTOBUF_FIELD_OFFSET(::raftKVRpcProctoc::GetArgs, clientid_),
   PROTOBUF_FIELD_OFFSET(::raftKVRpcProctoc::GetArgs, requestid_),
+  PROTOBUF_FIELD_OFFSET(::raftKVRpcProctoc::GetArgs, op_),
   ~0u,  // no _has_bits_
   PROTOBUF_FIELD_OFFSET(::raftKVRpcProctoc::GetReply, _internal_metadata_),
   ~0u,  // no _extensions_
@@ -127,9 +128,9 @@ const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_kvServerRPC_2eproto::offsets[]
 };
 static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
   { 0, -1, sizeof(::raftKVRpcProctoc::GetArgs)},
-  { 8, -1, sizeof(::raftKVRpcProctoc::GetReply)},
-  { 15, -1, sizeof(::raftKVRpcProctoc::PutAppendArgs)},
-  { 25, -1, sizeof(::raftKVRpcProctoc::PutAppendReply)},
+  { 9, -1, sizeof(::raftKVRpcProctoc::GetReply)},
+  { 16, -1, sizeof(::raftKVRpcProctoc::PutAppendArgs)},
+  { 26, -1, sizeof(::raftKVRpcProctoc::PutAppendReply)},
 };
 
 static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] = {
@@ -140,17 +141,18 @@ static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] =
 };
 
 const char descriptor_table_protodef_kvServerRPC_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
-  "\n\021kvServerRPC.proto\022\020raftKVRpcProctoc\";\n"
+  "\n\021kvServerRPC.proto\022\020raftKVRpcProctoc\"G\n"
   "\007GetArgs\022\013\n\003Key\030\001 \001(\014\022\020\n\010ClientId\030\002 \001(\014\022"
-  "\021\n\tRequestId\030\003 \001(\005\"&\n\010GetReply\022\013\n\003Err\030\001 "
-  "\001(\014\022\r\n\005Value\030\002 \001(\014\"\\\n\rPutAppendArgs\022\013\n\003K"
-  "ey\030\001 \001(\014\022\r\n\005Value\030\002 \001(\014\022\n\n\002Op\030\003 \001(\014\022\020\n\010C"
-  "lientId\030\004 \001(\014\022\021\n\tRequestId\030\005 \001(\005\"\035\n\016PutA"
-  "ppendReply\022\013\n\003Err\030\001 \001(\0142\233\001\n\013kvServerRpc\022"
-  "N\n\tPutAppend\022\037.raftKVRpcProctoc.PutAppen"
-  "dArgs\032 .raftKVRpcProctoc.PutAppendReply\022"
-  "<\n\003Get\022\031.raftKVRpcProctoc.GetArgs\032\032.raft"
-  "KVRpcProctoc.GetReplyB\003\200\001\001b\006proto3"
+  "\021\n\tRequestId\030\003 \001(\005\022\n\n\002Op\030\004 \001(\014\"&\n\010GetRep"
+  "ly\022\013\n\003Err\030\001 \001(\014\022\r\n\005Value\030\002 \001(\014\"\\\n\rPutApp"
+  "endArgs\022\013\n\003Key\030\001 \001(\014\022\r\n\005Value\030\002 \001(\014\022\n\n\002O"
+  "p\030\003 \001(\014\022\020\n\010ClientId\030\004 \001(\014\022\021\n\tRequestId\030\005"
+  " \001(\005\"\035\n\016PutAppendReply\022\013\n\003Err\030\001 \001(\0142\233\001\n\013"
+  "kvServerRpc\022N\n\tPutAppend\022\037.raftKVRpcProc"
+  "toc.PutAppendArgs\032 .raftKVRpcProctoc.Put"
+  "AppendReply\022<\n\003Get\022\031.raftKVRpcProctoc.Ge"
+  "tArgs\032\032.raftKVRpcProctoc.GetReplyB\003\200\001\001b\006"
+  "proto3"
   ;
 static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_kvServerRPC_2eproto_deps[1] = {
 };
@@ -162,7 +164,7 @@ static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_kvS
 };
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_kvServerRPC_2eproto_once;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_kvServerRPC_2eproto = {
-  false, false, descriptor_table_protodef_kvServerRPC_2eproto, "kvServerRPC.proto", 434,
+  false, false, descriptor_table_protodef_kvServerRPC_2eproto, "kvServerRPC.proto", 446,
   &descriptor_table_kvServerRPC_2eproto_once, descriptor_table_kvServerRPC_2eproto_sccs, descriptor_table_kvServerRPC_2eproto_deps, 4, 0,
   schemas, file_default_instances, TableStruct_kvServerRPC_2eproto::offsets,
   file_level_metadata_kvServerRPC_2eproto, 4, file_level_enum_descriptors_kvServerRPC_2eproto, file_level_service_descriptors_kvServerRPC_2eproto,
@@ -199,6 +201,11 @@ GetArgs::GetArgs(const GetArgs& from)
     clientid_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_clientid(),
       GetArena());
   }
+  op_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  if (!from._internal_op().empty()) {
+    op_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_op(),
+      GetArena());
+  }
   requestid_ = from.requestid_;
   // @@protoc_insertion_point(copy_constructor:raftKVRpcProctoc.GetArgs)
 }
@@ -207,6 +214,7 @@ void GetArgs::SharedCtor() {
   ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_GetArgs_kvServerRPC_2eproto.base);
   key_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   clientid_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  op_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   requestid_ = 0;
 }
 
@@ -220,6 +228,7 @@ void GetArgs::SharedDtor() {
   GOOGLE_DCHECK(GetArena() == nullptr);
   key_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   clientid_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  op_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
 void GetArgs::ArenaDtor(void* object) {
@@ -245,6 +254,7 @@ void GetArgs::Clear() {
 
   key_.ClearToEmpty(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
   clientid_.ClearToEmpty(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  op_.ClearToEmpty(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
   requestid_ = 0;
   _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
@@ -277,6 +287,14 @@ const char* GetArgs::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::in
       case 3:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24)) {
           requestid_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
+      // bytes Op = 4;
+      case 4:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 34)) {
+          auto str = _internal_mutable_op();
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
@@ -326,6 +344,12 @@ failure:
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteInt32ToArray(3, this->_internal_requestid(), target);
   }
 
+  // bytes Op = 4;
+  if (this->op().size() > 0) {
+    target = stream->WriteBytesMaybeAliased(
+        4, this->_internal_op(), target);
+  }
+
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
@@ -354,6 +378,13 @@ size_t GetArgs::ByteSizeLong() const {
     total_size += 1 +
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
         this->_internal_clientid());
+  }
+
+  // bytes Op = 4;
+  if (this->op().size() > 0) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
+        this->_internal_op());
   }
 
   // int32 RequestId = 3;
@@ -400,6 +431,9 @@ void GetArgs::MergeFrom(const GetArgs& from) {
   if (from.clientid().size() > 0) {
     _internal_set_clientid(from._internal_clientid());
   }
+  if (from.op().size() > 0) {
+    _internal_set_op(from._internal_op());
+  }
   if (from.requestid() != 0) {
     _internal_set_requestid(from._internal_requestid());
   }
@@ -428,6 +462,7 @@ void GetArgs::InternalSwap(GetArgs* other) {
   _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
   key_.Swap(&other->key_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
   clientid_.Swap(&other->clientid_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  op_.Swap(&other->op_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
   swap(requestid_, other->requestid_);
 }
 

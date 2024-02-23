@@ -9,7 +9,7 @@
 
 #include <string>
 #include <vector>
-std::string Clerk::Get(std::string key) {
+std::string Clerk::Get(std::string key, std::string op, std::string& value) {
     m_requestId++;// 增加 m_requestId，表示请求的唯一标识
     auto requestId = m_requestId;//设置请求的客户端ID和请求ID。
     int server = m_recentLeaderId;
@@ -17,6 +17,7 @@ std::string Clerk::Get(std::string key) {
     args.set_key(key);
     args.set_clientid(m_clientId);
     args.set_requestid(requestId);
+    args.set_op(op);
 
     while (true) {
         raftKVRpcProctoc::GetReply reply;// m_servers 是一个服务器列表
@@ -30,7 +31,8 @@ std::string Clerk::Get(std::string key) {
         }
         if(reply.err() == OK){// 如果响应正常（OK），更新最近的领导者ID，并返回响应中的值。
             m_recentLeaderId = server;// m_recentLeaderId 是最近的领导者服务器的ID
-            return reply    .value();
+            value = reply.value();
+            return "";
         }
     }
     return "";
@@ -69,8 +71,17 @@ void Clerk::Put(std::string key, std::string value) {
     PutAppend(key, value, "Put");
 }
 
-void Clerk::Append(std::string key, std::string value) {
-    PutAppend(key, value, "Append");
+void Clerk::Upload(std::string key, std::string value) {
+    PutAppend(key, value, "upload");
+}
+std::string Clerk::Download(std::string key, std::string& value){
+    return Get(key,"download", value);
+}
+std::string Clerk::Delete(std::string key, std::string& value){
+    return Get(key, "delete",value);
+}
+std::string Clerk::Ls(std::string key, std::string& value){
+    return Get(key, "ls",value);
 }
 //初始化客户端
 void Clerk::Init(std::string configFileName) {// 接收一个字符串类型的 configFileName，表示配置文件的名称。

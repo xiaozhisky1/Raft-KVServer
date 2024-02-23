@@ -3,7 +3,9 @@
 #include <rpcprovider.h>
 
 #include "mprpcconfig.h"
-
+#include <iostream>
+#include <filesystem>
+using namespace std;
 void KvServer::DprintfKVDB() {
     if (!Debug) {
         return;
@@ -18,39 +20,52 @@ void KvServer::DprintfKVDB() {
 
 }
 
-void KvServer::ExecuteAppendOpOnKVDB(Op op) {
+void KvServer::ExecuteUploadOpOnKVDB(Op op) {
     //if op.IfDuplicate {   //get请求是可重复执行的，因此可以不用判复
     //	return
     //}
     m_mtx.lock();
 
-    m_skipList.insert_set_element(op.Key,op.Value);
+    //m_skipList.insert_set_element(op.Key,op.Value);
 
     // if (m_kvDB.find(op.Key) != m_kvDB.end()) {
     //     m_kvDB[op.Key] = m_kvDB[op.Key] + op.Value;
     // } else {
     //     m_kvDB.insert(std::make_pair(op.Key, op.Value));
     // }
+    m_file.insert(op.Key);
+    // 将文件存入
+    savefile("/home/rookie/fs/" + op.Key, op.Value);
+
     m_lastRequestId[op.ClientId] = op.RequestId;
     m_mtx.unlock();
 
 
     //    DPrintf("[KVServerExeAPPEND-----]ClientId :%d ,RequestID :%d ,Key : %v, value : %v", op.ClientId, op.RequestId, op.Key, op.Value)
-    DprintfKVDB();
+    //DprintfKVDB();
 }
-
-void KvServer::ExecuteGetOpOnKVDB(Op op, std::string *value, bool *exist) {
+// 此处为download命令
+void KvServer::ExecuteGetOpOnKVDB(Op op, std::string &value, bool *exist) {
     m_mtx.lock();
-    *value = "";
     *exist = false;
-    if(m_skipList.search_element(op.Key, *value)) {
-        *exist = true;
-        // *value = m_skipList.se //value已经完成赋值了
-    }
+    // if(m_skipList.search_element(op.Key, *value)) {
+    //     *exist = true;
+    //     // *value = m_skipList.se //value已经完成赋值了
+    // }
     // if (m_kvDB.find(op.Key) != m_kvDB.end()) {
     //     *exist = true;
     //     *value = m_kvDB[op.Key];
     // }
+    if(m_file.find(op.Key) != m_file.end()){
+        *exist = true;
+        // 从 /home/rookie/fs下读取文件文件
+        value = fileToString("/home/rookie/fs/" + op.Key);
+        std::cout<<"------------------------------------"<<endl;
+        std::cout<<"---------已读取到待下载文件---------"<<endl;
+        std::cout<<"------------------------------------"<<endl;
+        std::cout<<"---------已读取到待下载文件---------"<<endl;
+    }
+
     m_lastRequestId[op.ClientId] = op.RequestId;
     m_mtx.unlock();
 
@@ -60,25 +75,54 @@ void KvServer::ExecuteGetOpOnKVDB(Op op, std::string *value, bool *exist) {
     } else {
         //        DPrintf("[KVServerExeGET----]ClientId :%d ,RequestID :%d ,Key : %v, But No KEY!!!!", op.ClientId, op.RequestId, op.Key)
     }
-    DprintfKVDB();
+    //DprintfKVDB();
 }
 
 void KvServer::ExecutePutOpOnKVDB(Op op) {
     m_mtx.lock();
     m_skipList.insert_set_element(op.Key,op.Value);
     // m_kvDB[op.Key] = op.Value;
+
     m_lastRequestId[op.ClientId] = op.RequestId;
     m_mtx.unlock();
 
 
     //    DPrintf("[KVServerExePUT----]ClientId :%d ,RequestID :%d ,Key : %v, value : %v", op.ClientId, op.RequestId, op.Key, op.Value)
-    DprintfKVDB();
+    //DprintfKVDB();
 }
+
+// 处理ls命令
+void KvServer::ExecuteLsOpOnKVDB(Op op, std::string *value){
+    m_mtx.lock();
+    *value = "";
+    for(auto it : m_file){
+        *value += it + " "; 
+    }
+    m_mtx.unlock();
+}
+
+// 处理delete命令
+void KvServer::ExecuteDeleteOpOnKVDB(Op op,std::string *errtype){
+    m_mtx.lock();
+    *errtype = "";
+    if(m_file.find(op.Key) == m_file.end()){
+        *errtype = "file not exit";
+    }
+    else {
+        std::string filename = "/home/rookie/fs/" + op.Key;
+        int result = std::remove(filename.c_str());
+        if(result != 0) 
+            *errtype = "delete fail";
+    }
+    m_mtx.unlock();
+}
+// 删除文件
+
 
 // 处理来自clerk的Get RPC
 void KvServer::Get(const raftKVRpcProctoc::GetArgs *args, raftKVRpcProctoc::GetReply *reply) {
     Op op;
-    op.Operation = "Get";
+    op.Operation = args->op();
     op.Key = args->key();
     op.Value = "";
     op.ClientId = args->clientid();
@@ -122,31 +166,70 @@ void KvServer::Get(const raftKVRpcProctoc::GetArgs *args, raftKVRpcProctoc::GetR
             // 不会违反线性一致性
             std::string value;
             bool exist = false;
-            ExecuteGetOpOnKVDB(op, &value, &exist);// 真正执行Get操作
-            if (exist) {
+            if(op.Operation == "download"){// 这也是download命令
+                ExecuteGetOpOnKVDB(op, value, &exist);// 真正执行Get操作
+                if (exist) {
+                    reply->set_err(OK);
+                    reply->set_value(value);
+                } else {
+                    reply->set_err(ErrNoKey);
+                    reply->set_value("");
+                }
+            }
+            else if(op.Operation == "ls"){
+                ExecuteLsOpOnKVDB(op, &value);
                 reply->set_err(OK);
                 reply->set_value(value);
-            } else {
-                reply->set_err(ErrNoKey);
-                reply->set_value("");
             }
+            else if(op.Operation == "delete"){
+                std::string errtype;
+                ExecuteDeleteOpOnKVDB(op, &errtype);
+                if(errtype == ""){
+                    reply->set_err(OK);
+                    reply->set_value("");
+                }
+                else{
+                    reply->set_err(OK);
+                    reply->set_value(errtype);
+                }
+            }
+            
         } else {
             reply->set_err(ErrWrongLeader); //返回这个，其实就是让clerk换一个节点重试
         }
     } else {
         //raft已经提交了该command（op），可以正式开始执行了
         //        DPrintf("[WaitChanGetRaftApplyMessage<--]Server %d , get Command <-- Index:%d , ClientId %d, RequestId %d, Opreation %v, Key :%v, Value :%v", kv.me, raftIndex, op.ClientId, op.RequestId, op.Operation, op.Key, op.Value)
-        //todo 这里还要再次检验的原因：感觉不用检验，因为leader只要正确的提交了，那么这些肯定是符合的
+        //todo 这里还要再次检验的原因：目前未知，如果没有这里的代码，处理读取相关的指令会失败
         if (raftCommitOp.ClientId == op.ClientId && raftCommitOp.RequestId == op.RequestId) {
             std::string value;
             bool exist = false;
-            ExecuteGetOpOnKVDB(op, &value, &exist); // 真正执行Get操作
-            if (exist) {
+                if(op.Operation == "download"){// 这也是download命令
+                ExecuteGetOpOnKVDB(op, value, &exist);// 真正执行Get操作
+                if (exist) {
+                    reply->set_err(OK);
+                    reply->set_value(value);
+                } else {
+                    reply->set_err(ErrNoKey);
+                    reply->set_value("");
+                }
+            }
+            else if(op.Operation == "ls"){
+                ExecuteLsOpOnKVDB(op, &value);
                 reply->set_err(OK);
                 reply->set_value(value);
-            } else {
-                reply->set_err(ErrNoKey);
-                reply->set_value("");
+            }
+            else if(op.Operation == "delete"){
+                std::string errtype;
+                ExecuteDeleteOpOnKVDB(op, &errtype);
+                if(errtype == ""){
+                    reply->set_err(OK);
+                    reply->set_value("");
+                }
+                else{
+                    reply->set_err(ErrNoKey);
+                    reply->set_value("");
+                }
             }
         } else {
             reply->set_err(ErrWrongLeader);
@@ -179,8 +262,8 @@ void KvServer::GetCommandFromRaft(ApplyMsg message) {
         if (op.Operation == "Put") {
             ExecutePutOpOnKVDB(op);
         }
-        if (op.Operation == "Append") {
-            ExecuteAppendOpOnKVDB(op);
+        if (op.Operation == "upload") {
+            ExecuteUploadOpOnKVDB(op);
         }
         //  kv.lastRequestId[op.ClientId] = op.RequestId  在Executexxx函数里面更新的
     }
@@ -204,8 +287,8 @@ bool KvServer::ifRequestDuplicate(std::string ClientId, int RequestId) {
 }
 
 //get和put//append執行的具體細節是不一樣的
-//PutAppend 在收到 Raft 消息之后执行，具体函数内部只判断幂等性（即是否重复）。
-//而 get 函数在收到 Raft 消息之后执行，因为 get 无论是否重复都可以再次执行。
+//PutAppend 在收到 Raft 通过applyChan发来的消息之后执行，具体函数内部只判断幂等性（即是否重复）。
+//而 get 函数在收到 Raft 消息之前就可以执行，因为 get 无论是否重复都可以再次执行。
 void KvServer::PutAppend(const raftKVRpcProctoc::PutAppendArgs *args, raftKVRpcProctoc::PutAppendReply *reply) {
     Op op;
     op.Operation = args->op();
@@ -366,7 +449,6 @@ void KvServer::Get(google::protobuf::RpcController *controller, const ::raftKVRp
     KvServer::Get(request, response);
     done->Run();
 }
-
 KvServer::KvServer(int me, int maxraftstate, std::string nodeInforFileName, short port):
 m_skipList(6){
     std::shared_ptr<Persister> persister = std::make_shared<Persister>(me); //创建一个共享指针 persister，用于管理持久化数据。
@@ -434,6 +516,13 @@ m_skipList(6){
     m_skipList;
     waitApplyCh;
     m_lastRequestId;
+    m_file;
+    for (const auto & entry : filesystem::directory_iterator("/home/rookie/fs")) { // 初始化 m_file
+        if (filesystem::is_regular_file(entry.path())) {
+            this->m_file.insert(entry.path().filename());
+            //std::cout << entry.path().filename() << std::endl;
+        }
+    }
     m_lastSnapShotRaftLogIndex = 0; //todo:感覺這個函數沒什麼用，不如直接調用raft節點中的snapshot值？？？
     auto snapshot = persister->ReadSnapshot();
     if (!snapshot.empty()) {

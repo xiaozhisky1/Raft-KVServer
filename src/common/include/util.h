@@ -19,6 +19,8 @@
 #include <boost/serialization/access.hpp>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
+#include <fstream>
+#include <filesystem>
 
 template <class F>
 class DeferClass {
@@ -135,8 +137,9 @@ public:
     std::string Value;
     std::string  ClientId;  //客户端号码
     int RequestId;  //客户端号码请求的Request的序列号，为了保证线性一致性
+    int size;
     // IfDuplicate bool // Duplicate command can't be applied twice , but only for PUT and APPEND
-
+    
 public:
     //todo
     //为了协调raftRPC中的command只设置成了string,这个的限制就是正常字符中不能包含|
@@ -208,5 +211,9 @@ bool getReleasePort(short& port);
 //    return 0;
 //}
 
+std::string fileToString(std::string path);
 
+bool savefile(std::string path, std::string &content);
+
+bool deletefile(const std::string& filename);
 #endif //  UTIL_H

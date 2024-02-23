@@ -36,6 +36,7 @@ private:
     std::string m_serializedKVData; // todo ： 序列化后的kv数据，理论上可以不用，但是目前没有找到特别好的替代方法
     SkipList<std::string, std::string> m_skipList;
     std::unordered_map<std::string, std::string> m_kvDB;
+    std::unordered_set<std::string> m_file; // 存储已保存的文件名
 
     std::unordered_map<int, LockQueue<Op> *> waitApplyCh;
     // index(raft) -> chan  //？？？字段含义   waitApplyCh是一个map，键是int，值是Op类型的管道
@@ -54,11 +55,15 @@ public:
 
     void DprintfKVDB();
 
-    void ExecuteAppendOpOnKVDB(Op op);
+    void ExecuteUploadOpOnKVDB(Op op);
 
-    void ExecuteGetOpOnKVDB(Op op, std::string *value, bool *exist);
+    void ExecuteGetOpOnKVDB(Op op, std::string &value, bool *exist);
 
     void ExecutePutOpOnKVDB(Op op);
+
+    void ExecuteLsOpOnKVDB(Op op, std::string *value);
+
+    void ExecuteDeleteOpOnKVDB(Op op, std::string *errtype);
 
     void Get(const raftKVRpcProctoc::GetArgs *args, raftKVRpcProctoc::GetReply *reply); //将 GetArgs 改为rpc调用的，因为是远程客户端，即服务器宕机对客户端来说是无感的
     /**
@@ -84,7 +89,6 @@ public:
 
     // Handler the SnapShot from kv.rf.applyCh
     void GetSnapShotFromRaft(ApplyMsg message);
-
 
     std::string MakeSnapShot();
 
