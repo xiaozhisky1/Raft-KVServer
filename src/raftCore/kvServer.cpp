@@ -45,7 +45,7 @@ void KvServer::ExecuteAppendOpOnKVDB(Op op) {
 void KvServer::ExecuteGetOpOnKVDB(Op op, std::string *value, bool *exist) {
     m_mtx.lock();
     *value = "";
-    // *exist = false;
+    *exist = false;
     // if(m_skipList.search_element(op.Key, *value)) {
     //     *exist = true;
     //     // *value = m_skipList.se //value已经完成赋值了
@@ -55,7 +55,7 @@ void KvServer::ExecuteGetOpOnKVDB(Op op, std::string *value, bool *exist) {
     //     *value = m_kvDB[op.Key];
     // }
     *exist = true;
-    *value = fileToString("../images/img.png");
+    *value = fileToString("../images/XV6.png");// "../images/XV6.png"
     cout<<"-----------------------------------"<<endl;
     cout<<"------------文件已获取--------------"<<endl;
 

@@ -234,7 +234,12 @@ void RpcProvider::OnMessage(const muduo::net::TcpConnectionPtr &conn,
     真的是妙呀
     */
    //真正调用方法
-    service->CallMethod(method, nullptr, request, response, done);
+    
+    // service->CallMethod(method, nullptr, request, response, done);
+    std::thread t([&service, method, request, response, done]() {
+        service->CallMethod(method, nullptr, request, response, done);
+    });
+    t.join();
 }
 
 // Closure的回调操作，用于序列化rpc的响应和网络发送,发送响应回去
