@@ -29,6 +29,11 @@ int main(){
         if (!input.empty()) {
             arguments.push_back(input);
         }
+        // 处理只有命令，没有参数的情况
+        if(command.size() == 0 && arguments.size() ==1){
+            command = arguments[0];
+            arguments.clear();
+        }
 
         if(command == "upload"){
              if(arguments.size()!=1){
@@ -39,7 +44,7 @@ int main(){
             int i;
             for (i = arguments[0].size() - 1; arguments[0][i] != '/'; i--)
                 ;
-            string arg = arguments[0].substr(i + 1, arguments[0].size() - i);
+            string arg = arguments[0].substr(i + 1, arguments[0].size() - i);// 从地址截取文件名
             client.Upload(arg, s);
             cout<<arguments[0]<<" 已上传"<<endl;
         }
@@ -76,6 +81,12 @@ int main(){
             client.Delete(arguments[0], res);
             if(res.size()>0) cout<<res<<endl;
             else cout<<"删除成功"<<endl;
+        }
+        else if(command == "help"){
+            cout<<"download <源文件名> <目的文件名>"<<endl;
+            cout<<"upload <文件的地址>"<<endl;
+            cout<<"delete <文件名>"<<endl;
+            cout<<"ls"<<endl;
         }
         else cout<<"command not found"<<endl;
     }

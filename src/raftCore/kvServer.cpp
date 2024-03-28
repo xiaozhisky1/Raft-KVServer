@@ -111,6 +111,7 @@ void KvServer::ExecuteDeleteOpOnKVDB(Op op,std::string *errtype){
     else {
         std::string filename = "/home/rookie/fs/" + op.Key;
         int result = std::remove(filename.c_str());
+        m_file.erase(op.Key);
         if(result != 0) 
             *errtype = "delete fail";
     }
@@ -156,7 +157,6 @@ void KvServer::Get(const raftKVRpcProctoc::GetArgs *args, raftKVRpcProctoc::GetR
 
     if (!chForRaftIndex->timeOutPop(CONSENSUS_TIMEOUT, &raftCommitOp)) {
         //        DPrintf("[GET TIMEOUT!!!]From Client %d (Request %d) To Server %d, key %v, raftIndex %d", args.ClientId, args.RequestId, kv.me, op.Key, raftIndex)
-        // todo 2023年06月01日
         int _ = -1;
         bool isLeader = false;
         m_raftNode->GetState(&_, &isLeader);

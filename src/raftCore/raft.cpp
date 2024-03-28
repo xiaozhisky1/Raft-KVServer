@@ -40,7 +40,7 @@ void Raft::AppendEntries1(const raftRpcProctoc::AppendEntriesArgs *args, raftRpc
     // 不能无脑的从prevlogIndex开始阶段日志，因为rpc可能会延迟，导致发过来的log是很久之前的
 
     //	那么就比较日志，日志有3种情况
-    if (args->prevlogindex() > getLastLogIndex()) {
+    if (args->prevlogindex() > getLastLogIndex()) {// Leader的日志索引更大
         reply->set_success(false);
         reply->set_term(m_currentTerm);
         reply->set_updatenextindex(getLastLogIndex() + 1);
@@ -88,7 +88,7 @@ void Raft::AppendEntries1(const raftRpcProctoc::AppendEntriesArgs *args, raftRpc
                 }
             }
         }
-
+    
 
         // 错误写法like：  rf.shrinkLogsToIndex(args.PrevLogIndex)
         // rf.logs = append(rf.logs, args.Entries...)
@@ -800,7 +800,7 @@ Raft::sendAppendEntries(int server, std::shared_ptr<raftRpcProctoc::AppendEntrie
         }
         //	怎么越写越感觉rf.nextIndex数组是冗余的呢，看下论文fig2，其实不是冗余的
     } else {
-        *appendNums = *appendNums + 1;
+        *appendNums = *appendNums + 1; //到这里代表同意接收了本次心跳或者日志
         DPrintf("---------------------------tmp------------------------- 節點{%d}返回true,當前*appendNums{%d}", server,
                 *appendNums);
         //rf.matchIndex[server] = len(args.Entries) //只要返回一个响应就对其matchIndex应该对其做出反应，

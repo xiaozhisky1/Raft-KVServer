@@ -49,17 +49,18 @@ int main(int argc, char **argv) {
     }
     for (int i = 0; i < nodeNum; i++) {// 每一个子进程就是一个raft节点
         short port = startPort + static_cast<short>(i);
-        std::cout << "start to create raftkv node:" << i << "    port:" << port << " pid:" << getpid() << std::endl;
+        std::cout << "start to create raftkv node:" << i << "    port:" << port << " pid:" ;
         pid_t pid = fork(); // 创建新进程
         if (pid == 0) {
             // 如果是子进程
             // 子进程的代码
-
+            std::cout<< getpid() << std::endl;
             auto kvServer = new KvServer(i, 500, configFileName, port);
             pause(); // 子进程进入等待状态，不会执行 return 语句
         } else if (pid > 0) {
             // 如果是父进程
             // 父进程的代码
+            std::cout<< getpid() << std::endl;
             sleep(1);
         } else {
             // 如果创建进程失败
