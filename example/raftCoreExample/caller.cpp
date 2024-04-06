@@ -21,7 +21,7 @@ int main(){
     // client.Put("x",put);
     while(true){
         string get;
-        client.Get("myfile.txt",get);
+        client.Get("myfile.txt",get); // （Get的第一个参数没有起到实际用途，真正Get的文件地址在KvServer::ExecuteGetOpOnKVDB()）
         savefile("./success0.jpg",get);
         sleep(2);
     }

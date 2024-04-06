@@ -43,7 +43,9 @@ void KvServer::ExecuteAppendOpOnKVDB(Op op) {
 }
 
 void KvServer::ExecuteGetOpOnKVDB(Op op, std::string *value, bool *exist) {
-    //m_mtx.lock();
+    // 如果是几十KB的文件可以正常传输，较大的文件需要将m_mtx.lock()和m_mtx.unlock()注释掉，因为过长时间的阻塞在这会耽误心跳
+    // 当然若有较大文件的传输需求也可以增加心跳间隔时长
+    m_mtx.lock();
     *value = "";
     *exist = false;
     // if(m_skipList.search_element(op.Key, *value)) {
@@ -55,12 +57,12 @@ void KvServer::ExecuteGetOpOnKVDB(Op op, std::string *value, bool *exist) {
     //     *value = m_kvDB[op.Key];
     // }
     *exist = true;
-    *value = fileToString("../images/009.jpg");// "../images/XV6.png"
+    *value = fileToString("../images/XV6.png");// "../images/XV6.png"
     cout<<"-----------------------------------"<<endl;
     cout<<"------------文件已获取--------------"<<endl;
 
     m_lastRequestId[op.ClientId] = op.RequestId;
-    // m_mtx.unlock();
+    m_mtx.unlock();
 
 
     if (*exist) {

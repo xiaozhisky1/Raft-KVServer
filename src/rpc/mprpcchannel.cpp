@@ -122,10 +122,7 @@ void MprpcChannel::CallMethod(const google::protobuf::MethodDescriptor *method,
         nCount = recv(m_clientFd, recv_buf, 1024, 0);
         recv_size += nCount;
         buffer.insert(buffer.end(), recv_buf, recv_buf + nCount);
-    }while (nCount == 1024);
-    // nCount = recv(m_clientFd, recv_buf, 1024, 0);
-    // recv_size += nCount;
-    // buffer.insert(buffer.end(), recv_buf, recv_buf + nCount);
+    }while (nCount == 1024); // 待改进：若是需要接受的数据长度刚好为1024的整数倍依然会出错（概率极低就没做优化）
 
     if(nCount == -1)
     {
@@ -141,6 +138,7 @@ void MprpcChannel::CallMethod(const google::protobuf::MethodDescriptor *method,
     // 反序列化rpc调用的响应数据
     // std::string response_str(recv_buf, 0, recv_size); // bug：出现问题，recv_buf中遇到\0后面的数据就存不下来了，导致反序列化失败
     // if (!response->ParseFromString(response_str))
+    
     if (!response->ParseFromArray(data, recv_size))
     {
         char errtxt[1050] = {0};
