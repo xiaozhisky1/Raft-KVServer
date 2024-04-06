@@ -46,6 +46,8 @@ void KvServer::ExecuteUploadOpOnKVDB(Op op) {
 }
 // 此处为download命令
 void KvServer::ExecuteGetOpOnKVDB(Op op, std::string &value, bool *exist) {
+    // 如果是几十KB的文件可以正常传输，较大的文件需要将m_mtx.lock()和m_mtx.unlock()注释掉，因为过长时间的阻塞在这会耽误心跳
+    // 当然若有较大文件的传输需求也可以增加心跳间隔时长
     m_mtx.lock();
     *exist = false;
     // if(m_skipList.search_element(op.Key, *value)) {
