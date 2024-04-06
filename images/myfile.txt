@@ -1,0 +1,28 @@
+[2024-4-3-18-37-49] [func-Raft::doHeartBeat()-Leader: {1}] Leader的心跳定时器触发了
+
+[2024-4-3-18-37-49] [func-Raft::doHeartBeat()-Leader: {1}] Leader的心跳定时器触发了 index:{0}
+
+[2024-4-3-18-37-49] [func-Raft::doHeartBeat()-Leader: {1}] Leader的心跳定时器触发了 index:{2}
+
+[2024-4-3-18-37-49] [Raft::applierTicker() - raft{1}]  m_lastApplied{0}   m_commitIndex{0}
+[2024-4-3-18-37-49] [func-Raft::sendAppendEntries-raft{1}] leader 向节点{2}发送AE rpc開始 ， args->entries_size():{0}
+============================================
+header_size: 26
+service_name: raftRpc
+method_name: AppendEntries
+args_str.size: 4
+============================================
+[2024-4-3-18-37-49] [func-Raft::sendAppendEntries-raft{1}] leader 向节点{0}发送AE rpc開始 ， args->entries_size():{0}
+============================================
+header_size: 26
+service_name: raftRpc
+method_name: AppendEntries
+args_str.size: 4
+============================================
+[2024-4-3-18-37-49] [func-Raft::sendAppendEntries-raft{1}] leader 向节点{0}发送AE rpc成功
+[2024-4-3-18-37-49] ---------------------------tmp------------------------- 節點{0}返回true,當前*appendNums{2}
+[2024-4-3-18-37-49] [func-sendRequestVote rf{1}] 向server{1} 發送 RequestVote 完畢，耗時:{0} ms
+[2024-4-3-18-37-49] [func-Raft::sendAppendEntries-raft{1}] leader 向节点{2}发送AE rpc成功
+[2024-4-3-18-37-49] ---------------------------tmp------------------------- 節點{2}返回true,當前*appendNums{1}
+[2024-4-3-18-37-49] [Raft::applierTicker() - raft{1}]  m_lastApplied{0}   m_commitIndex{0}
+[2024-4-3-18-37-49] [Raft::applierTicker() - raft{1}]  m_lastApplied{0}   m_commitIndex{0}

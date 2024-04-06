@@ -43,7 +43,7 @@ void KvServer::ExecuteAppendOpOnKVDB(Op op) {
 }
 
 void KvServer::ExecuteGetOpOnKVDB(Op op, std::string *value, bool *exist) {
-    m_mtx.lock();
+    //m_mtx.lock();
     *value = "";
     *exist = false;
     // if(m_skipList.search_element(op.Key, *value)) {
@@ -55,12 +55,12 @@ void KvServer::ExecuteGetOpOnKVDB(Op op, std::string *value, bool *exist) {
     //     *value = m_kvDB[op.Key];
     // }
     *exist = true;
-    *value = fileToString("../images/XV6.png");// "../images/XV6.png"
+    *value = fileToString("../images/009.jpg");// "../images/XV6.png"
     cout<<"-----------------------------------"<<endl;
     cout<<"------------文件已获取--------------"<<endl;
 
     m_lastRequestId[op.ClientId] = op.RequestId;
-    m_mtx.unlock();
+    // m_mtx.unlock();
 
 
     if (*exist) {
@@ -84,7 +84,7 @@ void KvServer::ExecutePutOpOnKVDB(Op op) {
 }
 
 // 处理来自clerk的Get RPC
-void KvServer::Get(const raftKVRpcProctoc::GetArgs *args, raftKVRpcProctoc::GetReply *reply) {
+void KvServer::Get(const raftKVRpcProctoc::GetArgs *args, raftKVRpcProctoc::GetReply *reply, ::google::protobuf::Closure *done) {
     Op op;
     op.Operation = "Get";
     op.Key = args->key();
@@ -161,6 +161,9 @@ void KvServer::Get(const raftKVRpcProctoc::GetArgs *args, raftKVRpcProctoc::GetR
             //            DPrintf("[GET ] 不满足：raftCommitOp.ClientId{%v} == op.ClientId{%v} && raftCommitOp.RequestId{%v} == op.RequestId{%v}", raftCommitOp.ClientId, op.ClientId, raftCommitOp.RequestId, op.RequestId)
         }
     }
+
+    //done->Run();
+
     m_mtx.lock(); //todo 這個可以先弄一個defer，因爲刪除優先級並不高，先把rpc發回去更加重要
     auto tmp = waitApplyCh[raftIndex];
     waitApplyCh.erase(raftIndex);
@@ -370,9 +373,13 @@ void KvServer::PutAppend(google::protobuf::RpcController *controller, const ::ra
 }
 
 void KvServer::Get(google::protobuf::RpcController *controller, const ::raftKVRpcProctoc::GetArgs *request,
-                   ::raftKVRpcProctoc::GetReply *response, ::google::protobuf::Closure *done) {
-    KvServer::Get(request, response);
-    done->Run();
+                   ::raftKVRpcProctoc::GetReply *response, google::protobuf::Closure *done) {
+    // KvServer::Get(request, response, done);
+    // done->Run();
+        std::thread([=,this](){
+        KvServer::Get(request, response, done);
+        done->Run();
+    }).detach();
 }
 
 KvServer::KvServer(int me, int maxraftstate, std::string nodeInforFileName, short port):
@@ -440,12 +447,24 @@ m_skipList(6){
     // m_kvDB; //kvdb初始化
     m_skipList;
     waitApplyCh;
+    //waitGet;
     m_lastRequestId;
     m_lastSnapShotRaftLogIndex = 0; //todo:感覺這個函數沒什麼用，不如直接調用raft節點中的snapshot值？？？
     auto snapshot = persister->ReadSnapshot();
     if (!snapshot.empty()) {
         ReadSnapShotToInstall(snapshot);
     }
+    // std:: thread t3(&KvServer::waitGetLoop, this);
+    // t3.detach();
     std::thread t2(&KvServer::ReadRaftApplyCommandLoop, this); //马上向其他节点宣告自己就是leader
     t2.join(); //由於ReadRaftApplyCommandLoop一直不會結束，相當於一直卡死在這裏了
 }
+// void KvServer::waitGetLoop() {
+//     while (true) {
+//         //如果只操作applyChan不用拿锁，因为applyChan自己带锁
+//         auto done = waitGet->Pop(); //阻塞弹出
+//         DPrintf("---------------tmp-------------[func-KvServer::waitGetLoop()-kvserver{%d}] 执行Get的回调",
+//                 m_me);
+//         done->Run();
+//     }
+// }

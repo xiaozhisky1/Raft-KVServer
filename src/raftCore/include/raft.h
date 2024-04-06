@@ -71,25 +71,26 @@ private:
     int m_lastSnapshotIncludeTerm;
 
 public:
-    void AppendEntries1(const raftRpcProctoc::AppendEntriesArgs *args, raftRpcProctoc::AppendEntriesReply *reply);
-    void applierTicker();
-    bool CondInstallSnapshot(int lastIncludedTerm, int lastIncludedIndex, std::string snapshot);
+    void AppendEntries1(const raftRpcProctoc::AppendEntriesArgs *args, raftRpcProctoc::AppendEntriesReply *reply); //日志同步 + 心跳 rpc 
+    void applierTicker();  //定期向状态机写入日志，非重点函数
+    bool CondInstallSnapshot(int lastIncludedTerm, int lastIncludedIndex, std::string snapshot); //快照相关，非重点
     void doElection();
     void doHeartBeat();
     // 每隔一段时间检查睡眠时间内有没有重置定时器，没有则说明超时了
 // 如果有则设置合适睡眠时间：睡眠到重置时间+超时时间
-    void electionTimeOutTicker();
+    void electionTimeOutTicker();//监控是否该发起选举了
     std::vector<ApplyMsg> getApplyLogs();
     int getNewCommandIndex();
     void getPrevLogInfo(int server, int *preIndex, int *preTerm);
     void GetState(int *term, bool *isLeader);
     void InstallSnapshot( const raftRpcProctoc::InstallSnapshotRequest *args, raftRpcProctoc::InstallSnapshotResponse *reply);
-    void leaderHearBeatTicker();
+    void leaderHearBeatTicker(); //检查是否需要发起心跳（leader）
     void leaderSendSnapShot(int server);
-    void leaderUpdateCommitIndex();
+    void leaderUpdateCommitIndex();//leader更新commitIndex
     bool matchLog(int logIndex, int logTerm);
     void persist();
-    void RequestVote(const raftRpcProctoc::RequestVoteArgs *args, raftRpcProctoc::RequestVoteReply *reply);
+    void RequestVote(const raftRpcProctoc::RequestVoteArgs *args, raftRpcProctoc::RequestVoteReply *reply);//变成candidate之后需要让其他结点给自己投票
+
     bool UpToDate(int index, int term);
     int getLastLogIndex();
     void getLastLogIndexAndTerm(int *lastLogIndex, int *lastLogTerm);
@@ -107,7 +108,7 @@ public:
     void readPersist(std::string data);
     std::string persistData();
 
-
+    // 发布发来一个新日志
     void Start(Op command,int* newLogIndex,int* newLogTerm,bool* isLeader ) ;
 
 // Snapshot the service says it has created a snapshot that has

@@ -19,8 +19,12 @@ int main(){
 
     // string put = fileToString("../images/XV6.png");// "../images/img.png"
     // client.Put("x",put);
-    string get;
-    get = client.Get("img.png");
-    savefile("./o2.png",get);
+    while(true){
+        string get;
+        client.Get("myfile.txt",get);
+        savefile("./success0.jpg",get);
+        sleep(2);
+    }
+   
     return 0;
 }

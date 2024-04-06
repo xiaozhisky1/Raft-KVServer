@@ -9,7 +9,7 @@
 
 #include <string>
 #include <vector>
-std::string Clerk::Get(std::string key) {
+std::string Clerk::Get(std::string key, std::string &value) {
     m_requestId++;
     auto requestId = m_requestId;
     int server = m_recentLeaderId;
@@ -30,7 +30,8 @@ std::string Clerk::Get(std::string key) {
         }
         if(reply.err() == OK){
             m_recentLeaderId = server;
-            return reply    .value();
+            value = reply.value();
+            return "";
         }
     }
     return "";

@@ -32,7 +32,7 @@ class Clerk{
 public:
     //对外暴露的三个功能和初始化
     void Init(std::string configFileName);
-    std::string Get(std::string key ) ;
+    std::string Get(std::string key , std::string &value) ;
 
     void Put(std::string key , std::string value );
     void Append(std::string key , std::string value );

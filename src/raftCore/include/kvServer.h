@@ -40,6 +40,7 @@ private:
     std::unordered_map<int, LockQueue<Op> *> waitApplyCh;
     // index(raft) -> chan  //？？？字段含义   waitApplyCh是一个map，键是int，值是Op类型的管道
 
+    LockQueue<google::protobuf::Closure *> * waitGet;
     std::unordered_map<std::string, int> m_lastRequestId; // clientid -> requestID  //一个kV服务器可能连接多个client
 
     // last SnapShot point , raftIndex
@@ -60,7 +61,7 @@ public:
 
     void ExecutePutOpOnKVDB(Op op);
 
-    void Get(const raftKVRpcProctoc::GetArgs *args, raftKVRpcProctoc::GetReply *reply); //将 GetArgs 改为rpc调用的，因为是远程客户端，即服务器宕机对客户端来说是无感的
+    void Get(const raftKVRpcProctoc::GetArgs *args, raftKVRpcProctoc::GetReply *reply, ::google::protobuf::Closure *done); //将 GetArgs 改为rpc调用的，因为是远程客户端，即服务器宕机对客户端来说是无感的
     /**
      * 從raft節點中獲取消息  （不要誤以爲是執行【GET】命令）
      * @param message
@@ -74,6 +75,9 @@ public:
 
     ////一直等待raft传来的applyCh
     void ReadRaftApplyCommandLoop();
+
+    // 实现异步发送文件，一直等待传来的回调函数执行。
+    //void waitGetLoop();
 
     void ReadSnapShotToInstall(std::string snapshot);
 
