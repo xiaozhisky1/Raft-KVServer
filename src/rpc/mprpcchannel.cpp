@@ -104,7 +104,24 @@ void MprpcChannel::CallMethod(const google::protobuf::MethodDescriptor *method,
     // 接收rpc请求的响应值
     char recv_buf[1024] = {0};
     int recv_size = 0;
-    if (-1 == (recv_size = recv(m_clientFd, recv_buf, 1024, 0)))
+    int nCount = 0;
+    // if (-1 == (recv_size = recv(m_clientFd, recv_buf, 1024, 0)))
+    // {
+    //     close(m_clientFd); m_clientFd = -1;
+    //     char errtxt[512] = {0};
+    //     sprintf(errtxt, "recv error! errno:%d", errno);
+    //     controller->SetFailed(errtxt);
+    //     return;
+    // }
+    vector<char> buffer;
+    do
+    {
+        nCount = recv(m_clientFd, recv_buf, 1024, 0);
+        recv_size += nCount;
+        buffer.insert(buffer.end(), recv_buf, recv_buf + nCount);
+    }while (nCount == 1024); // 待改进：若是需要接受的数据长度刚好为1024的整数倍依然会出错（概率极低就没做优化）
+
+    if(nCount == -1)
     {
         close(m_clientFd); m_clientFd = -1;
         char errtxt[512] = {0};
@@ -113,10 +130,12 @@ void MprpcChannel::CallMethod(const google::protobuf::MethodDescriptor *method,
         return;
     }
 
+    // 获取buffer中数据部分的起始地址
+    char* data = buffer.data();
     // 反序列化rpc调用的响应数据
     // std::string response_str(recv_buf, 0, recv_size); // bug：出现问题，recv_buf中遇到\0后面的数据就存不下来了，导致反序列化失败
     // if (!response->ParseFromString(response_str))
-    if (!response->ParseFromArray(recv_buf, recv_size))
+    if (!response->ParseFromArray(data, recv_size))
     {
         char errtxt[1050] = {0};
         sprintf(errtxt, "parse error! response_str:%s", recv_buf);

@@ -60,10 +60,10 @@ void KvServer::ExecuteGetOpOnKVDB(Op op, std::string &value, bool *exist) {
         *exist = true;
         // 从 /home/rookie/fs下读取文件文件
         value = fileToString("/home/rookie/fs/" + op.Key);
-        std::cout<<"------------------------------------"<<endl;
-        std::cout<<"---------已读取到待下载文件---------"<<endl;
-        std::cout<<"------------------------------------"<<endl;
-        std::cout<<"---------已读取到待下载文件---------"<<endl;
+        // std::cout<<"------------------------------------"<<endl;
+        // std::cout<<"---------已读取到待下载文件---------"<<endl;
+        // std::cout<<"------------------------------------"<<endl;
+        // std::cout<<"---------已读取到待下载文件---------"<<endl;
     }
 
     m_lastRequestId[op.ClientId] = op.RequestId;
@@ -446,8 +446,12 @@ void KvServer::PutAppend(google::protobuf::RpcController *controller, const ::ra
 
 void KvServer::Get(google::protobuf::RpcController *controller, const ::raftKVRpcProctoc::GetArgs *request,
                    ::raftKVRpcProctoc::GetReply *response, ::google::protobuf::Closure *done) {
-    KvServer::Get(request, response);
-    done->Run();
+    // KvServer::Get(request, response);
+    // done->Run();
+        std::thread([=,this](){
+        KvServer::Get(request, response);
+        done->Run();
+    }).detach();
 }
 KvServer::KvServer(int me, int maxraftstate, std::string nodeInforFileName, short port):
 m_skipList(6){
